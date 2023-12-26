@@ -1,9 +1,10 @@
 import argparse
 import os
 import shutil
-import datetime as datetime
-import click
-import sys
+import os
+import time
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import dataset.dataset as dtset
 import torch
@@ -28,28 +29,8 @@ def parse_arguments():
     parser.add_argument(
         "--log-path",
         type=str,
-        default='outputs/train_result',
-        help="log path where trained models path are saved",
+        help="log path",
     )
-    parser.add_argument(
-        "--epochs",
-        type=int,
-        default=100,
-        help="train epochs",
-    )
-    parser.add_argument(
-        "--model-name",
-        type=str,
-        default='TinyCD_dhj',
-        help="Changed Detection Models",
-    )
-    parser.add_argument(
-        "--save-after",
-        type=int,
-        default=10,
-        help="Model weight will be saved after this argument number",
-    )
-
 
     group_gpus = parser.add_mutually_exclusive_group()
     group_gpus.add_argument(
@@ -62,18 +43,24 @@ def parse_arguments():
     parsed_arguments = parser.parse_args()
 
     # create log dir if it doesn't exists
-    now = datetime.datetime.now()
-    now_time = now.strftime("%Y_%m_%d_%H_%M_%S")
-    log_dir_path = os.path.join(os.path.join(parsed_arguments.log_path, now_time + '_' + parsed_arguments.model_name + '_' + str(parsed_arguments.epochs)))
-    if not os.path.exists(log_dir_path):
-        try:
-            os.makedirs(log_dir_path, exist_ok=True)
-            click.secho(message="Train output folder was successfully created\n", fg="blue")
-        except OSError as e:
-            click.secho(message="\n❗ Error\n", fg="red")
-            sys.exit("OSError while creating output data dir")
+    if not os.path.exists(parsed_arguments.log_path):
+        os.mkdir(parsed_arguments.log_path)
 
-    parsed_arguments.log_path = log_dir_path
+    dir_run = sorted(
+        [
+            filename
+            for filename in os.listdir(parsed_arguments.log_path)
+            if filename.startswith("run_")
+        ]
+    )
+
+    if len(dir_run) > 0:
+        num_run = int(dir_run[-1].split("_")[-1]) + 1
+    else:
+        num_run = 0
+    parsed_arguments.log_path = os.path.join(
+        parsed_arguments.log_path, "run_%04d" % num_run + "/"
+    )
 
     return parsed_arguments
 
@@ -102,16 +89,16 @@ def train(
         testimg = testimg.to(device).float()
         mask = mask.to(device).float()
 
+
         # Evaluating the model:
         generated_mask = model(reference, testimg).squeeze(1)
-
+        # print(generated_mask[0].max(),generated_mask[0].min())
         # Loss gradient descend step:
-        it_loss = criterion(generated_mask, mask)
-
+        it_loss = criterion(generated_mask, mask.squeeze(1))
         # Feeding the comparison metric tool:
-        bin_genmask = (generated_mask.to("cpu") >
-                       0.5).detach().numpy().astype(int)
+        bin_genmask = (generated_mask.to("cpu") >0.5).numpy().astype(int)
         mask = mask.to("cpu").numpy().astype(int)
+
         tool4metric.update_cm(pr=bin_genmask, gt=mask)
 
         return it_loss
@@ -121,7 +108,8 @@ def train(
         print("Epoch {}".format(epc))
         model.train()
         epoch_loss = 0.0
-        for (reference, testimg), mask in dataset_train:
+        start_time = time.time()
+        for i,((reference, testimg), mask,_) in enumerate(dataset_train):
             # Reset the gradients:
             optimizer.zero_grad()
 
@@ -130,15 +118,19 @@ def train(
             it_loss.backward()
             optimizer.step()
 
+            if i%100 == 0 or i == len(dataset_train):
+                print("it_loss {}/{} : {}".format(i,len(dataset_train),it_loss))
+
             # Track metrics:
             epoch_loss += it_loss.to("cpu").detach().numpy()
             ### end of iteration for epoch ###
 
         epoch_loss /= len(dataset_train)
-
+        end_time = time.time()
         #########
         print("Training phase summary")
         print("Loss for epoch {} is {}".format(epc, epoch_loss))
+        print("Time for epoch {} is {}m {}s".format(epc, (end_time - start_time)//60 , (end_time - start_time)//60))
         writer.add_scalar("Loss/epoch", epoch_loss, epc)
         scores_dictionary = tool4metric.get_scores()
         writer.add_scalar("IoU class change/epoch",
@@ -163,19 +155,21 @@ def train(
                 model.state_dict(), os.path.join(logpath, "model_{}.pth".format(epc))
             )
 
-
     def validation_phase(epc):
         model.eval()
         epoch_loss_eval = 0.0
         tool4metric.clear()
+        start_time = time.time()
         with torch.no_grad():
-            for (reference, testimg), mask in dataset_val:
+            for (reference, testimg), mask, _ in dataset_val:
                 epoch_loss_eval += evaluate(reference,
                                             testimg, mask).to("cpu").numpy()
 
         epoch_loss_eval /= len(dataset_val)
+        end_time = time.time()
         print("Validation phase summary")
         print("Loss for epoch {} is {}".format(epc, epoch_loss_eval))
+        print("Time for epoch {} is {}m {}s".format(epc, (end_time - start_time)//60 , (end_time - start_time)//60))
         writer.add_scalar("Loss_val/epoch", epoch_loss_eval, epc)
         scores_dictionary = tool4metric.get_scores()
         writer.add_scalar("IoU_val class change/epoch",
@@ -192,8 +186,6 @@ def train(
                 epc, scores_dictionary["F1_1"])
         )
         print()
-
-
 
     for epc in range(epochs):
         training_phase(epc)
@@ -260,6 +252,11 @@ def run():
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=100)
 
+    # copy the configurations
+    _ = shutil.copytree(
+        "./models",
+        os.path.join(args.log_path, "models"),
+    )
 
     train(
         data_loader_training,
@@ -270,8 +267,8 @@ def run():
         scheduler,
         args.log_path,
         writer,
-        epochs=args.epochs,
-        save_after=args.save_after,
+        epochs=100,
+        save_after=1,
         device=device
     )
     writer.close()

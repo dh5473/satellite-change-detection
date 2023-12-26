@@ -2,8 +2,8 @@ from typing import List, Tuple
 from collections import Sized
 from os.path import join
 import albumentations as alb
-from torchvision.transforms import Normalize
-
+from torchvision.transforms import Normalize, Compose, ToTensor, Resize, ToPILImage
+from torchvision import transforms
 import numpy as np
 import torch
 from matplotlib.image import imread
@@ -22,7 +22,7 @@ class MyDataset(Dataset, Sized):
             "A" for test images,
             "B" for ref images, 
             "label" for the gt masks,
-            "list" containing the image list files ("train.txt", "val.txt", "test.txt").
+            "list" containing the image list files ("train.txt", "test.txt", "eval.txt").
         """
         # Store the path data path + mode (train,val,test):
         self._mode = mode
@@ -41,24 +41,26 @@ class MyDataset(Dataset, Sized):
         # Initialize normalization:
         self._normalize = Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
-
+        self._preprocess = Compose([ToPILImage(),
+                                    ToTensor(),
+                                    self._normalize])
+        self._preprocess_mask = Compose([ToPILImage(),
+                            ToTensor()
+                            ])
     def __getitem__(self, indx):
         # Current image set name:
-        imgname = self._list_images[indx].strip('\n') + '.png'
-
+        img_name = self._list_images[indx].strip('\n')
         # Loading the images:
-        x_ref = imread(join(self._A, imgname))
-        x_test = imread(join(self._B, imgname))
-        x_mask = _binarize(imread(join(self._label, imgname)))
-
+        x_ref = imread(join(self._A, img_name))
+        x_test = imread(join(self._B, img_name))
+        x_mask = _binarize(imread(join(self._label, img_name)))
         # Data augmentation in case of training:
+        # Trasform data from HWC to CWH:
         if self._mode == "train":
             x_ref, x_test, x_mask = self._augment(x_ref, x_test, x_mask)
-
-        # Trasform data from HWC to CWH:
         x_ref, x_test, x_mask = self._to_tensors(x_ref, x_test, x_mask)
 
-        return (x_ref, x_test), x_mask
+        return (x_ref, x_test), x_mask, img_name
 
     def __len__(self):
         return len(self._list_images)
@@ -86,20 +88,28 @@ class MyDataset(Dataset, Sized):
     def _to_tensors(
         self, x_ref: np.ndarray, x_test: np.ndarray, x_mask: np.ndarray
     ) -> Tuple[Tensor, Tensor, Tensor]:
+        x_ref = x_ref.astype(np.uint8)
+        x_test = x_test.astype(np.uint8)
+        x_mask = x_mask.astype(np.uint8)
+        x_ref = self._preprocess(x_ref)
+        x_test = self._preprocess(x_test)
+        x_mask = self._preprocess_mask(x_mask)
         return (
-            self._normalize(torch.tensor(x_ref).permute(2, 0, 1)),
-            self._normalize(torch.tensor(x_test).permute(2, 0, 1)),
-            torch.tensor(x_mask),
+            x_ref,
+            x_test,
+            x_mask
         )
 
 
 def _create_shared_augmentation():
     return alb.Compose(
         [
+            alb.Resize(256,256),
             alb.Flip(p=0.5),
             alb.Rotate(limit=5, p=0.5),
         ],
         additional_targets={"image0": "image", "x_mask0": "mask"},
+        is_check_shapes=False,
     )
 
 

@@ -7,7 +7,7 @@ import os.path as osp
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Generate .txt file for LEVIR-CD dataset')
-    parser.add_argument('dataset_path', help='path of LEVIR-CD dataset')
+    parser.add_argument('--dataset_path', help='path of LEVIR-CD dataset')
     parser.add_argument('-o', '--out_dir', help='output path')
     args = parser.parse_args()
     return args
@@ -39,14 +39,14 @@ def generate_txt_from_dir(src_dir, dst_dir, split):
 
     with open('{}.txt'.format(osp.join(dst_dir, split)), 'w') as f:
         for item in file_list:
-            f.write(' '.join(item) + '\n')
+            f.write(' '.join(item) +'.png' +'\n')
 
 
 def main():
     args = parse_args()
     dataset_path = args.dataset_path
     if args.out_dir is None:
-        out_dir = osp.join('data', 'levir_cd')
+        out_dir = osp.join('data', 'AERIAL-CD')
     else:
         out_dir = args.out_dir
 
