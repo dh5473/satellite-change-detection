@@ -14,7 +14,7 @@ from metrics.metric_tool import ConfuseMatrixMeter
 from models.tinycd import TinyCD as Model
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
+import tqdm
 
 def parse_arguments():
     # Argument Parser creation
@@ -94,7 +94,7 @@ def train(
         generated_mask = model(reference, testimg).squeeze(1)
         # print(generated_mask[0].max(),generated_mask[0].min())
         # Loss gradient descend step:
-        it_loss = criterion(generated_mask, mask.squeeze(1))
+        it_loss = criterion(generated_mask,mask)
         # Feeding the comparison metric tool:
         bin_genmask = (generated_mask.to("cpu") >0.5).numpy().astype(int)
         mask = mask.to("cpu").numpy().astype(int)
@@ -110,6 +110,8 @@ def train(
         epoch_loss = 0.0
         start_time = time.time()
         for i,((reference, testimg), mask,_) in enumerate(dataset_train):
+            if i == 101:
+                break
             # Reset the gradients:
             optimizer.zero_grad()
 
@@ -150,7 +152,7 @@ def train(
         writer.flush()
 
         ### Save the model ###
-        if epc % save_after == 0:
+        if epc == 0:
             torch.save(
                 model.state_dict(), os.path.join(logpath, "model_{}.pth".format(epc))
             )
@@ -161,7 +163,7 @@ def train(
         tool4metric.clear()
         start_time = time.time()
         with torch.no_grad():
-            for (reference, testimg), mask, _ in dataset_val:
+            for (reference, testimg), mask, _ in tqdm.tqdm(dataset_val):
                 epoch_loss_eval += evaluate(reference,
                                             testimg, mask).to("cpu").numpy()
 

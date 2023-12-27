@@ -2,7 +2,7 @@ from typing import List, Tuple
 from collections import Sized
 from os.path import join
 import albumentations as alb
-from torchvision.transforms import Normalize
+from torchvision.transforms import Normalize, Compose, ToTensor, Resize, ToPILImage
 
 import numpy as np
 import torch
@@ -19,14 +19,19 @@ class InferenceDataset(Dataset, Sized):
     ) -> None:
 
         self._mode = mode
-        self._A = join(data_path, "A")
-        self._B = join(data_path, "B")
+        self._A = join(data_path,self._mode ,"A")
+        self._B = join(data_path,self._mode, "B")
         self._list_images = self._read_images_list(data_path)
 
         # Initialize normalization:
         self._normalize = Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
 
+        self._preprocess = Compose([ToPILImage(),
+                            Resize((256,256)),
+                            ToTensor(),
+                            self._normalize])
+        
     def __getitem__(self, indx):
         # Current image set name:
         img_name = self._list_images[indx].strip('\n')
@@ -50,8 +55,14 @@ class InferenceDataset(Dataset, Sized):
     
     def _to_tensors(
         self, x_ref: np.ndarray, x_test: np.ndarray
-    ) -> Tuple[Tensor, Tensor, Tensor]:
+    ) -> Tuple[Tensor, Tensor]:
+        x_ref = x_ref.astype(np.uint8)
+        x_test = x_test.astype(np.uint8)
+
+        x_ref = self._preprocess(x_ref)
+        x_test = self._preprocess(x_test)
+        
         return (
-            self._normalize(torch.tensor(x_ref).permute(2, 0, 1)),
-            self._normalize(torch.tensor(x_test).permute(2, 0, 1)),
+            x_ref,
+            x_test
         )

@@ -6,10 +6,11 @@ from torchvision.transforms import Normalize, Compose, ToTensor, Resize, ToPILIm
 from torchvision import transforms
 import numpy as np
 import torch
+from matplotlib import image as mimg
 from matplotlib.image import imread
 from torch.utils.data import Dataset
 from torch import Tensor
-
+from PIL import Image
 
 class MyDataset(Dataset, Sized):
     def __init__(
@@ -26,9 +27,9 @@ class MyDataset(Dataset, Sized):
         """
         # Store the path data path + mode (train,val,test):
         self._mode = mode
-        self._A = join(data_path, "A")
-        self._B = join(data_path, "B")
-        self._label = join(data_path, "label")
+        self._A = join(data_path,self._mode ,"A")
+        self._B = join(data_path,self._mode, "B")
+        self._label = join(data_path,self._mode, "label")
 
         # In all the dirs, the files share the same names:
         self._list_images = self._read_images_list(data_path)
@@ -41,12 +42,12 @@ class MyDataset(Dataset, Sized):
         # Initialize normalization:
         self._normalize = Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
+        
         self._preprocess = Compose([ToPILImage(),
+                                    Resize((256,256)),
                                     ToTensor(),
                                     self._normalize])
-        self._preprocess_mask = Compose([ToPILImage(),
-                            ToTensor()
-                            ])
+        
     def __getitem__(self, indx):
         # Current image set name:
         img_name = self._list_images[indx].strip('\n')
@@ -54,10 +55,10 @@ class MyDataset(Dataset, Sized):
         x_ref = imread(join(self._A, img_name))
         x_test = imread(join(self._B, img_name))
         x_mask = _binarize(imread(join(self._label, img_name)))
-        # Data augmentation in case of training:
-        # Trasform data from HWC to CWH:
+
         if self._mode == "train":
             x_ref, x_test, x_mask = self._augment(x_ref, x_test, x_mask)
+
         x_ref, x_test, x_mask = self._to_tensors(x_ref, x_test, x_mask)
 
         return (x_ref, x_test), x_mask, img_name
@@ -91,20 +92,21 @@ class MyDataset(Dataset, Sized):
         x_ref = x_ref.astype(np.uint8)
         x_test = x_test.astype(np.uint8)
         x_mask = x_mask.astype(np.uint8)
+
         x_ref = self._preprocess(x_ref)
         x_test = self._preprocess(x_test)
-        x_mask = self._preprocess_mask(x_mask)
+        x_mask = np.array(Image.fromarray(x_mask).resize((256, 256),resample=Image.BILINEAR))
+        x_mask = torch.tensor(x_mask)
+        # print(x_mask.shape, x_test.shape, x_ref.shape)
         return (
             x_ref,
             x_test,
             x_mask
         )
 
-
 def _create_shared_augmentation():
     return alb.Compose(
         [
-            alb.Resize(256,256),
             alb.Flip(p=0.5),
             alb.Rotate(limit=5, p=0.5),
         ],

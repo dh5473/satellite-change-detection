@@ -11,10 +11,10 @@ import numpy as np
 
 class DHJModel:
     def __init__(self,mode):
-        data_path = os.path.join('data/LEVIR-CD',mode)
-        model_path = 'pretrained_models/model_19.pth'
+        data_path = 'data/AERIAL-CD'
+        model_path = 'pretrained_models/model_0.pth'
         
-        self.save_path = os.path.join('results',mode)
+        self.save_path = os.path.join('results',mode + '1')
         self.tool_metric = ConfuseMatrixMeter(n_class=2)
         self.criterion = torch.nn.BCELoss()
         self.bce_loss = 0
@@ -46,7 +46,8 @@ class DHJModel:
                 testimg = testimg.to(self.device).float()
 
                 generated_mask = self.model(reference, testimg).squeeze(1)
-                bin_genmask = (generated_mask.to("cpu") >0.5).numpy().astype(int)
+                generated_mask = generated_mask.to("cpu")
+                bin_genmask = (generated_mask >0.5).numpy().astype(int)
 
                 bin_genmask = transform(bin_genmask)
                 save_images(img_name[0], bin_genmask, self.save_path)
@@ -59,7 +60,8 @@ class DHJModel:
                 mask = mask.float()
 
                 generated_mask = self.model(reference, testimg).squeeze(1)
-                bin_genmask = (generated_mask.to("cpu") >0.5).numpy().astype(int)
+                generated_mask = generated_mask.to("cpu")
+                bin_genmask = (generated_mask >0.5).numpy().astype(int)
                 self.bce_loss += self.criterion(generated_mask, mask)
   
                 mask = mask.numpy()
