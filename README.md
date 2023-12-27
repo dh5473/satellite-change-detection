@@ -1,7 +1,7 @@
 hi we are dhj
 
 
-'''
+```
 tinycd-template/
 │
 ├── data/ - directory for storing input data
@@ -45,4 +45,4 @@ tinycd-template/
 ├── READMD.md - readme! 
 ├── txt_generator.py - list txt file generator for LEVIR-CD structure dataset 
 └── requirements.txt - requirements 
-'''
+```
