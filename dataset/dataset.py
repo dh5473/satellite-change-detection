@@ -50,7 +50,7 @@ class MyDataset(Dataset, Sized):
         
     def __getitem__(self, indx):
         # Current image set name:
-        img_name = self._list_images[indx].strip('\n')
+        img_name = self._list_images[indx].strip('\n') + '.png'
         # Loading the images:
         x_ref = imread(join(self._A, img_name))
         x_test = imread(join(self._B, img_name))
