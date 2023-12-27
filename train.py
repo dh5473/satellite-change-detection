@@ -110,8 +110,7 @@ def train(
         epoch_loss = 0.0
         start_time = time.time()
         for i,((reference, testimg), mask,_) in enumerate(dataset_train):
-            if i == 101:
-                break
+
             # Reset the gradients:
             optimizer.zero_grad()
 
@@ -152,7 +151,7 @@ def train(
         writer.flush()
 
         ### Save the model ###
-        if epc == 0:
+        if epc % save_after == 0:
             torch.save(
                 model.state_dict(), os.path.join(logpath, "model_{}.pth".format(epc))
             )
