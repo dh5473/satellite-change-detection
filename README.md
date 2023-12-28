@@ -1,16 +1,19 @@
 hi we are dhj
 
-
 ```
 tinycd-template/
 │
 ├── data/ - directory for storing input data
-│   ├── LEVIR-CD 
+│   ├── LEVIR-CD - LEVIR dataset
 │   │	├── train
 │   │	├── val
 │   │	├── test
 │   │	└── list
-│   ├── AERIAL-CD 
+│   ├── AERIAL-CD - AI-hub custom dataset
+│   │	├── train
+│   │	├── val
+│   │   └── list
+│   ├── INFERENCE-CD - dataset for Inference
 │   │	├── train
 │   │	├── val
 │   └── └── list
@@ -26,9 +29,9 @@ tinycd-template/
 │   └── tinycd.py 
 │
 ├── modules/ - modules for change detection model
-│   │	├── ESAMB.py
-│   │	├── ffc_modules.py
-│   └── └── TMM.py
+│   ├── ESAMB.py
+│   ├── ffc_modules.py
+│   └── TMM.py
 │
 ├── outputs/ - directory for saving train results
 │   ├── best_weights/ - directory for saving best model weights

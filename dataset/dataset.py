@@ -44,13 +44,13 @@ class MyDataset(Dataset, Sized):
                                  std=[0.229, 0.224, 0.225])
         
         self._preprocess = Compose([ToPILImage(),
-                                    Resize((256,256)),
+                                    #Resize((256,256)),
                                     ToTensor(),
                                     self._normalize])
         
     def __getitem__(self, indx):
         # Current image set name:
-        img_name = self._list_images[indx].strip('\n') + '.png'
+        img_name = self._list_images[indx].strip('\n')
         # Loading the images:
         x_ref = imread(join(self._A, img_name))
         x_test = imread(join(self._B, img_name))
@@ -93,8 +93,13 @@ class MyDataset(Dataset, Sized):
         x_test = x_test.astype(np.uint8)
         x_mask = x_mask.astype(np.uint8)
 
+        # img_process
+
         x_ref = self._preprocess(x_ref)
         x_test = self._preprocess(x_test)
+
+
+
         x_mask = np.array(Image.fromarray(x_mask).resize((256, 256),resample=Image.BILINEAR))
         x_mask = torch.tensor(x_mask)
         # print(x_mask.shape, x_test.shape, x_ref.shape)

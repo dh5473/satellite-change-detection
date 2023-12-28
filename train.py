@@ -239,6 +239,7 @@ def run():
 
     # define the loss function for the model training.
     criterion = torch.nn.BCELoss()
+    #criterion = torch.nn.MSELoss()
 
     # choose the optimizer in view of the used dataset
     # Optimizer with tuned parameters for LEVIR-CD
