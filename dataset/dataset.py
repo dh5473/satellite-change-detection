@@ -2,7 +2,7 @@ from typing import List, Tuple
 from collections import Sized
 from os.path import join
 import albumentations as alb
-from torchvision.transforms import Normalize, Compose, ToTensor, Resize, ToPILImage
+from torchvision.transforms import Normalize, Compose, ToTensor, Resize, ToPILImage, CenterCrop
 from torchvision import transforms
 import numpy as np
 import torch
@@ -43,10 +43,12 @@ class MyDataset(Dataset, Sized):
         self._normalize = Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
         
-        self._preprocess = Compose([ToPILImage(),
-                                    #Resize((256,256)),
-                                    ToTensor(),
+        self._preprocess = Compose([CenterCrop(256),
                                     self._normalize])
+        
+        self._preprocess_mask = Compose([CenterCrop(256)
+                                    ])
+        
         
     def __getitem__(self, indx):
         # Current image set name:
@@ -89,20 +91,10 @@ class MyDataset(Dataset, Sized):
     def _to_tensors(
         self, x_ref: np.ndarray, x_test: np.ndarray, x_mask: np.ndarray
     ) -> Tuple[Tensor, Tensor, Tensor]:
-        x_ref = x_ref.astype(np.uint8)
-        x_test = x_test.astype(np.uint8)
-        x_mask = x_mask.astype(np.uint8)
 
-        # img_process
-
-        x_ref = self._preprocess(x_ref)
-        x_test = self._preprocess(x_test)
-
-
-
-        x_mask = np.array(Image.fromarray(x_mask).resize((256, 256),resample=Image.BILINEAR))
-        x_mask = torch.tensor(x_mask)
-        # print(x_mask.shape, x_test.shape, x_ref.shape)
+        x_ref = self._preprocess(torch.tensor(x_ref).permute(2, 0, 1))
+        x_test = self._preprocess(torch.tensor(x_test).permute(2, 0, 1))
+        x_mask = self._preprocess_mask(torch.tensor(x_mask))
         return (
             x_ref,
             x_test,
