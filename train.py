@@ -201,7 +201,8 @@ def run():
     torch.manual_seed(42)
     random.seed(42)
     np.random.seed(42)
-
+    torch.cuda.empty_cache()
+    
     # Parse arguments:
     args = parse_arguments()
 
@@ -269,7 +270,7 @@ def run():
         scheduler,
         args.log_path,
         writer,
-        epochs=100,
+        epochs=15,
         save_after=1,
         device=device
     )
