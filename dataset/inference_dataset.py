@@ -1,7 +1,7 @@
 from typing import List, Tuple
 from collections import Sized
 from os.path import join
-import albumentations as alb
+import os
 from torchvision.transforms import Normalize, Compose, ToTensor, Resize, ToPILImage, CenterCrop
 
 import numpy as np
@@ -27,12 +27,12 @@ class InferenceDataset(Dataset, Sized):
         self._normalize = Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
 
-        self._preprocess = Compose([CenterCrop(256),
+        self._preprocess = Compose([ToPILImage(),
                                     self._normalize])
         
     def __getitem__(self, indx):
         # Current image set name:
-        img_name = self._list_images[indx].strip('\n')
+        img_name = self._list_images[indx]
 
         # Loading the images:
         x_ref = imread(join(self._A, img_name))
@@ -47,16 +47,16 @@ class InferenceDataset(Dataset, Sized):
         return len(self._list_images)
 
     def _read_images_list(self, data_path: str) -> List[str]:
-        images_list_file = join(data_path,'list', self._mode + ".txt")
-        with open(images_list_file, "r") as f:
-            return f.readlines()
+        data_path = os.path.join(data_path, 'inference', 'A')
+        img_list = os.listdir(data_path)
+        return img_list
     
     def _to_tensors(
         self, x_ref: np.ndarray, x_test: np.ndarray
     ) -> Tuple[Tensor, Tensor]:
         
-        x_ref = self._preprocess(torch.tensor(x_ref).permute(2, 0, 1))
-        x_test = self._preprocess(torch.tensor(x_test).permute(2, 0, 1))
+        x_ref = self._preprocess(torch.tensor(x_ref).permute(2, 0, 1).astype(np.uint8))
+        x_test = self._preprocess(torch.tensor(x_test).permute(2, 0, 1).astype(np.uint8))
         
         return (
             x_ref,

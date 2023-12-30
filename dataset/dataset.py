@@ -2,11 +2,9 @@ from typing import List, Tuple
 from collections import Sized
 from os.path import join
 import albumentations as alb
-from torchvision.transforms import Normalize, Compose, ToTensor, Resize, ToPILImage, CenterCrop
-from torchvision import transforms
+from torchvision.transforms import Normalize, Compose, CenterCrop
 import numpy as np
 import torch
-from matplotlib import image as mimg
 from matplotlib.image import imread
 from torch.utils.data import Dataset
 from torch import Tensor
