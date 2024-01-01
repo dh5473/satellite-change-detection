@@ -8,7 +8,6 @@ import torch
 from matplotlib.image import imread
 from torch.utils.data import Dataset
 from torch import Tensor
-from PIL import Image
 
 class MyDataset(Dataset, Sized):
     def __init__(

@@ -16,7 +16,7 @@ import datetime
 class DHJModel:
     def __init__(self,mode):
 
-        model_path = 'outputs/best_weights/TinyCD/model_19.pth'
+        model_path = 'outputs/best_weights/TinyCD/model_14.pth'
         
         self.mode = mode
         self.base_path = 'data/INFERENCE-CD'
@@ -28,7 +28,7 @@ class DHJModel:
 
         self.device = self.device_assign()
         self.model = TinyCD()
-        #self.model.load_state_dict(torch.load(model_path))
+        self.model.load_state_dict(torch.load(model_path))
         self.model.eval()
         self.model.to(self.device)
 
@@ -72,8 +72,8 @@ class DHJModel:
             img_path_A = os.path.join(A_path, str(i) + '.png')
             img_path_B = os.path.join(B_path, str(i) + '.png')
 
-            image_pil_A = Image.fromarray(As[i].astype(np.uint8))
-            image_pil_B = Image.fromarray(Bs[i].astype(np.uint8))
+            image_pil_A = Image.fromarray((As[i] * 255).astype(np.uint8))
+            image_pil_B = Image.fromarray((Bs[i] * 255).astype(np.uint8))
 
             image_pil_A.save(img_path_A)
             image_pil_B.save(img_path_B)

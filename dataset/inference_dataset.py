@@ -2,7 +2,7 @@ from typing import List, Tuple
 from collections import Sized
 from os.path import join
 import os
-from torchvision.transforms import Normalize, Compose, ToTensor, Resize, ToPILImage, CenterCrop
+from torchvision.transforms import Normalize, Compose
 
 import numpy as np
 import torch
@@ -27,8 +27,7 @@ class InferenceDataset(Dataset, Sized):
         self._normalize = Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
 
-        self._preprocess = Compose([ToPILImage(),
-                                    self._normalize])
+        self._preprocess = Compose([self._normalize])
         
     def __getitem__(self, indx):
         # Current image set name:
@@ -55,8 +54,8 @@ class InferenceDataset(Dataset, Sized):
         self, x_ref: np.ndarray, x_test: np.ndarray
     ) -> Tuple[Tensor, Tensor]:
         
-        x_ref = self._preprocess(torch.tensor(x_ref).permute(2, 0, 1).astype(np.uint8))
-        x_test = self._preprocess(torch.tensor(x_test).permute(2, 0, 1).astype(np.uint8))
+        x_ref = self._preprocess(torch.tensor(x_ref).permute(2, 0, 1))
+        x_test = self._preprocess(torch.tensor(x_test).permute(2, 0, 1))
         
         return (
             x_ref,
