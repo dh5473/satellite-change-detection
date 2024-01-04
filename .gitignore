@@ -1,0 +1,6 @@
+data/
+AERIAL_CD_preprocess.ipynb
+outputs/train_result/
+outputs/inference_result/
+__pycache__
+db.sqlite3

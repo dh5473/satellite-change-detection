@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Sentinel Data Request</h2>
+    <form method="post" action="{% url 'main:sentinel' %}" id="dataRequestForm">
+        {% csrf_token %}
+        {% include "form_errors.html" %}
+        <div class="form-group">
+            <label for="coordinates">Coordinates [좌측 경도, 아래쪽 위도, 우측 경도, 위쪽 위도]</label>
+            <input type="text" class="form-control" id="coordinates" name="coordinates" placeholder="Enter coordinates">
+        </div>
+        <div class="form-group">
+            <label for="start_date">Second Start Date</label>
+            <input type="date" class="form-control" id="start_date" name="start_date">
+        </div>
+        <div class="form-group">
+            <label for="end_date">Second End Date</label>
+            <input type="date" class="form-control" id="end_date" name="end_date">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+{% endblock %}
