@@ -12,8 +12,8 @@ from torch import Tensor
 from torch.nn import (Module, ModuleList,Sigmoid)
 
 from modules.ffc_modules import PixelwiseLinear
-from modules.ESAMB import ESAMB, ScaleMixingModule, FeatureFusion
-from modules.TMM import TemporalMixingModule, UpMask
+from modules.ESAMM import ESAMM, TemporalMixingModule
+from modules.SMM import ScaleMixingModule
 
 
 ##################################################################################################
@@ -59,60 +59,51 @@ class TinyCD(Module):
         )
 
         # Initialize mixing blocks:
-        self._first_mix = ESAMB(6, 3,first_mix=True)
+        self._first_mix = ESAMM(6, 3,first_mix=True)
         self._mixing_mask = ModuleList(
             [
-                ESAMB(48, 24),
-                ESAMB(64, 32),
-                ESAMB(112, 56),
-                FeatureFusion(224, 112,'skip_sub'),
+                ESAMM(48, 24),
+                ESAMM(64, 32),
+                ESAMM(112, 56),
+                TemporalMixingModule(224, 112,'skip_sub'),
             ]
         )
 
         # Initialize Upsampling blocks:
         self._up = ModuleList(
             [
-                TemporalMixingModule(2, 112, 56,56),
-                TemporalMixingModule(2, 56, 64,32),
-                TemporalMixingModule(2, 64, 64,24),
-                TemporalMixingModule(2, 64, 32, 3),
+                ScaleMixingModule(2, 112, 56,56),
+                ScaleMixingModule(2, 56, 64,32),
+                ScaleMixingModule(2, 64, 64,24),
+                ScaleMixingModule(2, 64, 32, 3),
             ]
         )
 
         # Final classification layer:
-        self._classify = PixelwiseLinear([32, 16,8], [16,8, 1],None, Sigmoid()) # out_channels = 8
+        self._classify = PixelwiseLinear([32, 16,8], [16,8, 1],None, Sigmoid())
 
     def forward(self, x1: Tensor, x2: Tensor) -> Tensor:
 
         features = self._encode(x1, x2)
         latents = self._decode(features)
         out = self._classify(latents)
-        # print('output_shape:',out.shape)
         return out
 
     def _encode(self, ref, test) -> List[Tensor]:
-        # print('-----------------------------------------encoding--------------------------------')
-        # print('encoder_input_shape:',ref.shape)
 
-        # print('-----------------------------------------------------------')
         features = [self._first_mix(ref, test)]
-        # print('1_encode:',features[0].shape)
-        # print('-----------------------------------------------------------')
+
         for num, layer in enumerate(self._backbone):
             ref, test = layer(ref), layer(test)
-            # print(str(num)+'_vit:',ref.shape)
             if num != 0:
-                # print('-----------------------------------------------------------')
                 features.append(self._mixing_mask[num - 1](ref, test))
-                # print(str(num) + '_encode',features[num].shape)
-                # print('-----------------------------------------------------------')
+
         return features
 
     def _decode(self, features) -> Tensor:
-        # print('-----------------------------------------decoding--------------------------------')
-        # print('decoder_input_shape:',features[-1].shape)
+
         upping = features[-1]
         for i, j in enumerate(range(-2, -6, -1)):
             upping = self._up[i](upping, features[j])
-            # print(str(i+1) + '_decode:', upping.shape)
+
         return upping

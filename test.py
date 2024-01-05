@@ -3,7 +3,7 @@ from dataset.dataset import MyDataset
 import tqdm
 from torch.utils.data import DataLoader
 from metrics.metric_tool import ConfuseMatrixMeter
-from models.change_classifier import ChangeClassifier
+from models.tinycd import TinyCD
 import argparse
 
 def parse_arguments():
@@ -15,7 +15,7 @@ def parse_arguments():
         "--datapath",
         type=str,
         help="data path",
-        default="data/LEVIR-CD",
+        default="data\S2looking",
     )
     parser.add_argument(
         "--modelpath",
@@ -38,10 +38,10 @@ if __name__ == "__main__":
     # Initialisation of the dataset
     data_path = args.datapath 
     dataset = MyDataset(data_path, "test")
-    test_loader = DataLoader(dataset, batch_size=1)
+    test_loader = DataLoader(dataset, batch_size=8)
 
     # Initialisation of the model and print model stat
-    model = ChangeClassifier()
+    model = TinyCD()
     modelpath = args.modelpath
     model.load_state_dict(torch.load(modelpath))
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     criterion = torch.nn.BCELoss()
 
     with torch.no_grad():
-        for (reference, testimg), mask in tqdm.tqdm(test_loader):
+        for (reference, testimg), mask, _ in tqdm.tqdm(test_loader):
             reference = reference.to(device).float()
             testimg = testimg.to(device).float()
             mask = mask.float()

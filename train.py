@@ -240,9 +240,10 @@ def run():
 
     # define the loss function for the model training.
     criterion = torch.nn.BCELoss()
-    #criterion = torch.nn.MSELoss()
+
 
     # choose the optimizer in view of the used dataset
+
     # Optimizer with tuned parameters for LEVIR-CD
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.00356799066427741,
                                   weight_decay=0.009449677083344786, amsgrad=False)
@@ -270,8 +271,8 @@ def run():
         scheduler,
         args.log_path,
         writer,
-        epochs=15,
-        save_after=1,
+        epochs=50,
+        save_after=5,
         device=device
     )
     writer.close()

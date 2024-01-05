@@ -10,13 +10,15 @@ tinycd-template/
 │   │	├── test
 │   │	└── list
 │   ├── AERIAL-CD - AI-hub custom dataset
-│   │	├── train
-│   │	├── val
-│   │   └── list
-│   ├── INFERENCE-CD - dataset for Inference
-│   │	├── train
-│   │	├── val
-│   └── └── list
+│   │   └── ...
+│   ├── ONERA-CD - Onera dataset
+│   │   └── ...
+│   ├── S2looking - S2looking dataset
+│   │   └── ...
+│   ├── WHU-CD - WHU building dataset
+│   │   └── ...
+│   └── INFERENCE-CD - dataset for Inference
+│       └── ...
 │
 ├── dataset/ - anything about datasets goes here 
 │   ├── dataset.py 
@@ -29,9 +31,9 @@ tinycd-template/
 │   └── tinycd.py 
 │
 ├── modules/ - modules for change detection model
-│   ├── ESAMB.py
+│   ├── ESAMM.py
 │   ├── ffc_modules.py
-│   └── TMM.py
+│   └── SMM.py
 │
 ├── outputs/ - directory for saving train results
 │   ├── best_weights/ - directory for saving best model weights
@@ -47,5 +49,5 @@ tinycd-template/
 │
 ├── READMD.md - readme! 
 ├── txt_generator.py - list txt file generator for LEVIR-CD structure dataset 
-└── requirements.txt - requirements 
+└── requirements.txt - requirements for PIP
 ```

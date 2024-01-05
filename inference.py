@@ -16,7 +16,7 @@ import datetime
 class DHJModel:
     def __init__(self,mode):
 
-        model_path = 'outputs/best_weights/TinyCD/model_14.pth'
+        model_path = 'outputs/best_weights/TinyCD/s2looking_epoch50.pth'
         
         self.mode = mode
         self.base_path = 'data/INFERENCE-CD'
@@ -48,7 +48,7 @@ class DHJModel:
 
     def inference(self, A_, B_):
 
-        # 추론 폴더 생성
+        # Make Inference data directory
         now = datetime.datetime.now()
         folder_name = f"{'inference'}{now.strftime('%Y-%m-%d_%H-%M-%S')}"
         folder_path = os.path.join(self.base_path, folder_name)
@@ -62,9 +62,10 @@ class DHJModel:
         except OSError as e:
             print(f"폴더 생성 실패: {e}")        
 
-        # 이미지 padding & crop 후 저장
+        # Padding, Crop and Save
         A = imread(A_)
         B = imread(B_)
+        print(A.shape)
         x, y, As = pad_and_crop(A, (256, 256))
         _, _, Bs = pad_and_crop(B, (256, 256))
 
@@ -72,8 +73,8 @@ class DHJModel:
             img_path_A = os.path.join(A_path, str(i) + '.png')
             img_path_B = os.path.join(B_path, str(i) + '.png')
 
-            image_pil_A = Image.fromarray((As[i] * 255).astype(np.uint8))
-            image_pil_B = Image.fromarray((Bs[i] * 255).astype(np.uint8))
+            image_pil_A = Image.fromarray((As[i]*255).astype(np.uint8))
+            image_pil_B = Image.fromarray((Bs[i]*255).astype(np.uint8))
 
             image_pil_A.save(img_path_A)
             image_pil_B.save(img_path_B)
@@ -98,12 +99,12 @@ class DHJModel:
 
                 results.append(bin_genmask)
 
-        result_img_pil = restore_imgs(results, x, y)
+        result_img_pil = restore_imgs(results, x, y, A.shape[0], A.shape[1])
         os.makedirs(save_path,exist_ok=True)
         result_img_pil.save(os.path.join(save_path, 'result.png'))
 
 if __name__ == "__main__":
     model = DHJModel("inference")
-    A = 'data\AERIAL-CD\\train\\A\\train_0.png'
-    B = 'data\AERIAL-CD\\train\\B\\train_0.png'
+    A = 'data\LEVIR-CD\\train\A\\train_1.png'
+    B = 'data\LEVIR-CD\\train\B\\train_1.png'
     model.inference(A,B)
