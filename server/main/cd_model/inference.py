@@ -16,7 +16,7 @@ import datetime
 
 class DHJModel:
     def __init__(self, mode):
-        model_path = 'main/cd_model/outputs/best_weights/TinyCD/model_14.pth'
+        model_path = 'main/cd_model/outputs/best_weights/TinyCD/levir.pth'
         
         self.mode = mode
         self.base_path = 'main/cd_model/data/INFERENCE-CD'
@@ -94,7 +94,7 @@ class DHJModel:
 
                 results.append(bin_genmask)
 
-        result_img_pil = restore_imgs(results, x, y)
+        result_img_pil = restore_imgs(results, x, y, A.shape[0], A.shape[1])
         os.makedirs(save_path, exist_ok=True)
         result_img_pil.save(os.path.join(save_path, 'result.png'))
 

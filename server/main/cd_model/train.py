@@ -196,7 +196,6 @@ def train(
 
 
 def run():
-
     # set the random seed
     torch.manual_seed(42)
     random.seed(42)

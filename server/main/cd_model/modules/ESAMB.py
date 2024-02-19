@@ -19,12 +19,12 @@ class ESAMB(Module):
     ):
         self.first_mix = first_mix
         super().__init__()
-        self._featurefusion = FeatureFusion(ch_in, ch_out,'skip_sub') 
+        self._featurefusion = FeatureFusion(ch_in, ch_out,'skip_sub')
         self._smm = ScaleMixingModule(ch_out, ch_out, first_mix)
 
     def forward(self, x: Tensor, y: Tensor) -> Tensor:
         z_mix = self._featurefusion(x, y)
-        output = self._smm(z_mix) 
+        output = self._smm(z_mix)
         # if self.first_mix == True:
             # output = self._linear(output)
         return output
